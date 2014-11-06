@@ -213,7 +213,7 @@ fi
 # ${rootmnt}/etc/fstab. The original fstab is ${rootmnt}${ROOT_RO}/etc/fstab.
 ROOT_TYPE=$(cat /proc/mounts | grep ${ROOT} | cut -d' ' -f3)
 ROOT_OPTIONS=$(cat /proc/mounts | grep ${ROOT} | cut -d' ' -f4)
-ROOT_RW_OPTIONS=$(cat /proc/mounts | grep ${ROOT_RW} | cut -d' ' -f4)
+ROOT_RW_OPTIONS=$(cat /proc/mounts | grep ${RW_DEVICE} | cut -d' ' -f4)
 cat <<EOF >${rootmnt}/etc/fstab
 #
 #  This fstab is in RAM, the real one can be found at ${ROOT_RO}/etc/fstab
