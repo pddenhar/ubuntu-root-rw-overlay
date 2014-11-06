@@ -43,6 +43,9 @@
 #  the variable ROOT_RO_DRIVER. If nothing is given, overlayfs is used.
 #
 
+RW_DEVICE=/dev/disk/by-label/root-rw
+RW_TYPE="ext4"
+
 # no pre requirement
 PREREQ=""
 
@@ -91,6 +94,8 @@ fi
 # ${ROOT} and ${rootmnt} are predefined by caller of this script. Note that
 # the root fs ${rootmnt} it mounted readonly on the initrams, which fits nicely
 # for our purposes.
+# ${ROOT} corresponds to the root boot option, like /dev/sda1
+# ${rootmnt} is the path where root gets mounted - usually /root.
 ROOT_RW=/mnt/root-rw
 ROOT_RO=/mnt/root-ro
 
@@ -107,7 +112,7 @@ case ${ROOT_RO_DRIVER} in
         MOUNT_PARMS="-t aufs -o dirs=${ROOT_RW}:${ROOT_RO}=ro aufs-root ${rootmnt}"
         ;;
     *)
-        panic "${MYTAG} ERROR: invalide ROOT_RO_DRIVER ${ROOT_RO_DRIVER}"
+        panic "${MYTAG} ERROR: invalid ROOT_RO_DRIVER ${ROOT_RO_DRIVER}"
         ;;
 esac
 
@@ -134,9 +139,9 @@ if [ $? -ne 0 ]; then
 fi
 
 # mount a tempfs using the device name tmpfs-root at ${ROOT_RW}
-mount -L root-rw
+mount -t ${RW_TYPE} ${RW_DEVICE} ${ROOT_RW}
 if [ $? -ne 0 ]; then
-    log_failure_msg "${MYTAG} ERROR: failed to mount root-rw from fstab"
+    log_failure_msg "${MYTAG} ERROR: failed to mount ${ROOT_RW} using ${RW_DEVICE}"
     exit 0
 fi
 
@@ -191,8 +196,8 @@ if [ $? -ne 0 ]; then
     exit 0
 fi
 
-# technically, everything is set up nicely now. Since ${rootmnt} had beend 
-# mounted read-only on the initfamfs already, ${rootmnt}${ROOT_RO} is it, too.
+# technically, everything is set up nicely now. Since ${rootmnt} had been 
+# mounted read-only on the initfamfs already, ${rootmnt}${ROOT_RO} is too.
 # Now we init process could run - but unfortunately, we may have to prepare 
 # some more things here. 
 # Basically, there are two ways to deal with the read-only root fs. If the 
@@ -208,6 +213,7 @@ fi
 # ${rootmnt}/etc/fstab. The original fstab is ${rootmnt}${ROOT_RO}/etc/fstab.
 ROOT_TYPE=$(cat /proc/mounts | grep ${ROOT} | cut -d' ' -f3)
 ROOT_OPTIONS=$(cat /proc/mounts | grep ${ROOT} | cut -d' ' -f4)
+ROOT_RW_OPTIONS=$(cat /proc/mounts | grep ${ROOT_RW} | cut -d' ' -f4)
 cat <<EOF >${rootmnt}/etc/fstab
 #
 #  This fstab is in RAM, the real one can be found at ${ROOT_RO}/etc/fstab
@@ -220,6 +226,7 @@ cat <<EOF >${rootmnt}/etc/fstab
 #
 
 ${ROOT} ${ROOT_RO} ${ROOT_TYPE} ${ROOT_OPTIONS} 0 0
+${RW_DEVICE} ${ROOT_RW} ${RW_TYPE} ${ROOT_RW_OPTIONS} 0 0
 
 #
 #  remaining entries from the original ${ROOT_RO}/etc/fstab follow.
@@ -230,8 +237,9 @@ if [ $? -ne 0 ]; then
     #exit 0
 fi
 
-#remove root entry and swap from fstab
-cat ${rootmnt}${ROOT_RO}/etc/fstab | grep -v ' / ' | grep -v swap >>${rootmnt}/etc/fstab
+#remove root entry and swap from fstab by searching for lines with the '/' character surrounded by
+#whitespace and removing them
+cat ${rootmnt}${ROOT_RO}/etc/fstab | grep -v '[[:space:]]/[[:space:]]' | grep -v swap >>${rootmnt}/etc/fstab
 if [ $? -ne 0 ]; then
     log_failure_msg "${MYTAG} ERROR: failed to modify etc/fstab (step 2)"
     #exit 0
