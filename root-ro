@@ -45,6 +45,9 @@
 
 RW_DEVICE=/dev/disk/by-label/root-rw
 RW_TYPE="ext4"
+#it might be desirable to tune these options to your specific application
+#specifically, the data= option might not be desirable
+RW_OPTS="-o errors=continue,noatime,nodiratime,data=ordered"
 
 # no pre requirement
 PREREQ=""
@@ -138,8 +141,9 @@ if [ $? -ne 0 ]; then
     exit 0
 fi
 
-# mount a tempfs using the device name tmpfs-root at ${ROOT_RW}
-mount -t ${RW_TYPE} ${RW_DEVICE} ${ROOT_RW}
+# mount the ROOT_RW device at ${ROOT_RW}
+log_begin_msg "${MYTAG} Mounting ${RW_DEVICE} at ${ROOT_RW} with options ${RW_OPTS}"
+mount -t ${RW_TYPE} ${RW_OPTS} ${RW_DEVICE} ${ROOT_RW}
 if [ $? -ne 0 ]; then
     log_failure_msg "${MYTAG} ERROR: failed to mount ${ROOT_RW} using ${RW_DEVICE}"
     exit 0
