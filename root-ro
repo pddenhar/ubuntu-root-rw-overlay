@@ -169,7 +169,7 @@ if [ $? -ne 0 ]; then
     # do recovery and try resoring the mount for ${rootmnt}
     mount --move ${ROOT_RO} ${rootmnt}
     if [ $? -ne 0 ]; then
-       # thats badm, drpo to s shell to let the user try fixing this
+       # thats bad, drop to s shell to let the user try fixing this
        panic "${MYTAG} RECOVERY ERROR: failed to move ${ROOT_RO} back to ${rootmnt}"
     fi
     exit 0
