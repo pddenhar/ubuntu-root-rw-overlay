@@ -30,6 +30,7 @@
 # Install:
 #  put this file in /etc/initramfs-tools/scripts/init-bottom/root-ro
 #  chmod 0755 root-ro
+#  echo aufs >> /etc/initramfs-tools/modules
 #  optional: clean up menu.lst, update-grub
 #  update-initramfs -u
 #
